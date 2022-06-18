@@ -14,7 +14,7 @@ public class Hbase_DML {
     public static Connection connection = HbaseConnectionSingle.connection;
 
     //插入数据
-    public static void putCell(String namespace,String tableName,String rowKey,String family,String column,String value) throws IOException {
+    public static void putCell(String namespace, String tableName, String rowKey, String family, String column, String value) throws IOException {
         //1.通过Connection获取Table对象
         Table table = connection.getTable(TableName.valueOf(namespace, tableName));
 
@@ -33,7 +33,7 @@ public class Hbase_DML {
     }
 
     //获取数据
-    public static void getCells(String namespace,String tableName,String rowKey,String family,String column) throws IOException {
+    public static void getCells(String namespace, String tableName, String rowKey, String family, String column) throws IOException {
         //1.通过Connection获取Table对象
         Table table = connection.getTable(TableName.valueOf(namespace, tableName));
 
@@ -60,7 +60,7 @@ public class Hbase_DML {
 
         Cell[] cells = result.rawCells();
         for (Cell cell : cells) {
-            System.out.println(Bytes.toString(CellUtil.cloneRow(cell))+":"+Bytes.toString(CellUtil.cloneFamily(cell))+":"+Bytes.toString(CellUtil.cloneQualifier(cell))+":"+Bytes.toString(CellUtil.cloneValue(cell)));
+            System.out.println(Bytes.toString(CellUtil.cloneRow(cell)) + ":" + Bytes.toString(CellUtil.cloneFamily(cell)) + ":" + Bytes.toString(CellUtil.cloneQualifier(cell)) + ":" + Bytes.toString(CellUtil.cloneValue(cell)));
         }
 
         //关闭连接
@@ -68,7 +68,7 @@ public class Hbase_DML {
     }
 
     //删除数据
-    public static void deleteCells(String namespace,String tableName,String rowKey,String family,String column) throws IOException {
+    public static void deleteCells(String namespace, String tableName, String rowKey, String family, String column) throws IOException {
         //1.通过Connection获取Table对象
         Table table = connection.getTable(TableName.valueOf(namespace, tableName));
 
@@ -89,6 +89,42 @@ public class Hbase_DML {
         table.close();
     }
 
+    //扫描数据
+    public static void scanRows(String namespace, String tableName, String startRow, String stopRow) throws IOException {
+        //1.通过连接获取到Table对象
+        Table table = connection.getTable(TableName.valueOf(namespace, tableName));
+
+        //创建Scan对象
+        Scan scan = new Scan();
+
+        //获取所有版本的数据
+        scan.setRaw(true);
+        scan.readAllVersions();
+        //读取指定版本个数的数据
+//        scan.readVersions(10);
+
+        //指定扫描范围 第二个boolean类型的参数代表的是包含不包含此行
+//        scan.setStartRow(Bytes.toBytes(startRow));
+        scan.withStartRow(Bytes.toBytes(startRow));
+
+//        scan.setStopRow(Bytes.toBytes(stopRow));
+        scan.withStopRow(Bytes.toBytes(stopRow),true);
+
+        //调用Scan获取扫描结果
+        ResultScanner scanner = table.getScanner(scan);
+
+        for (Result result : scanner) {
+            Cell[] cells = result.rawCells();
+            for (Cell cell : cells) {
+                System.out.println(Bytes.toString(CellUtil.cloneRow(cell)) + ":" + Bytes.toString(CellUtil.cloneFamily(cell)) + ":" + Bytes.toString(CellUtil.cloneQualifier(cell)) + ":" + Bytes.toString(CellUtil.cloneValue(cell)));
+            }
+        }
+
+
+        //关闭Table
+        table.close();
+    }
+
 
     public static void main(String[] args) throws IOException {
 //        putCell("bigdata", "student", "1001", "info", "age", "19");
@@ -98,10 +134,11 @@ public class Hbase_DML {
 //        putCell("bigdata", "student", "1001", "info", "age", "23");
 //        putCell("bigdata", "student", "1001", "info", "age", "24");
 
-        deleteCells("bigdata", "student", "1001", "info", "age");
+//        deleteCells("bigdata", "student", "1001", "info", "age");
 
-        getCells("bigdata", "student", "1001", "info", "age");
+//        getCells("bigdata", "student", "1001", "info", "age");
 
+        scanRows("bigdata", "student", "1001", "1004");
 
         //关闭Hbase连接
         HbaseConnectionSingle.closeConnection();
